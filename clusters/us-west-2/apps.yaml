@@ -8,6 +8,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./apps/base
+  path: ./apps/us-west-2  # Changed from base to us-west-2
   prune: true
   wait: true
