@@ -15,6 +15,9 @@ spec:
         namespace: monitoring
   values:
     prometheus:
+      service:
+        type: NodePort
+        nodePort: 30090
       prometheusSpec:
         retention: 7d
         storageSpec:
@@ -26,7 +29,7 @@ spec:
                   storage: 10Gi
     grafana:
       enabled: true
-      adminPassword: admin123  # Change this!
+      adminPassword: admin123
       service:
         type: NodePort
         nodePort: 30080
