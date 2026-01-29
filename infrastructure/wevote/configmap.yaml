@@ -4,15 +4,20 @@ metadata:
   name: wevoteserver-config
   namespace: wevote
 data:
-  DJANGO_DEBUG: "False"
-  ALLOWED_HOSTS: "*"
-  DATABASE_URL: "postgresql://wevote:wevote_secure_password_change_me@postgres.wevote.svc.cluster.local:5432/wevote"
-  SECRET_KEY: "change-this-to-a-random-secret-key-in-production"
-  DATABASE_HOST: "postgres.wevote.svc.cluster.local"
+  # Primary Database Connection
+  DATABASE_HOST: "postgres"
   DATABASE_PORT: "5432"
-  DATABASE_NAME: "wevoteserverdb"
-  DATABASE_USER: "postgres"
+  DATABASE_NAME: "wevote"
+  DATABASE_USER: "wevote"
   DATABASE_PASSWORD: "MyDBpassword"
+  
+
+  # Read-only database connection
+  DATABASE_HOST_READONLY: "postgres"
+  DATABASE_PORT_READONLY: "5432"
+  DATABASE_NAME_READONLY: "wevote"
+  DATABASE_USER_READONLY: "wevote"
+  DATABASE_PASSWORD_READONLY: "MyDBpassword"
   
   # Django configuration
   DJANGO_SUPERUSER_EMAIL: "email@test.com"
