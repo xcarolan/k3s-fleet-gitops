@@ -9,7 +9,7 @@ data:
   DATABASE_PORT: "5432"
   DATABASE_NAME: "wevote"
   DATABASE_USER: "wevote"
-  DATABASE_PASSWORD: "MyDBpassword"
+  DATABASE_PASSWORD: "wevote_secure_password_change_me"
   
 
   # Read-only database connection
@@ -17,7 +17,7 @@ data:
   DATABASE_PORT_READONLY: "5432"
   DATABASE_NAME_READONLY: "wevote"
   DATABASE_USER_READONLY: "wevote"
-  DATABASE_PASSWORD_READONLY: "MyDBpassword"
+  DATABASE_PASSWORD_READONLY: "Mwevote_secure_password_change_me"
   
   # Django configuration
   DJANGO_SUPERUSER_EMAIL: "email@test.com"
