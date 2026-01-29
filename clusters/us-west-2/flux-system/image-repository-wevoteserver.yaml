@@ -1,0 +1,10 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: wevoteserver
+  namespace: flux-system
+spec:
+  image: 192.168.2.200:30500/wevoteserver
+  interval: 1m
+  secretRef:
+    name: registry-credentials

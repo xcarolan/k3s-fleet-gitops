@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wevote
+  labels:
+    name: wevote
+    environment: production

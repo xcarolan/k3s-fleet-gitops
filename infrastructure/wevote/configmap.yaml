@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wevoteserver-config
+  namespace: wevote
+data:
+  DJANGO_DEBUG: "False"
+  ALLOWED_HOSTS: "*"
+  DATABASE_URL: "postgresql://wevote:wevote_secure_password_change_me@postgres:5432/wevote"
+  SECRET_KEY: "change-this-to-a-random-secret-key-in-production"
