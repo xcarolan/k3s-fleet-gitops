@@ -4,7 +4,6 @@ metadata:
   name: registry-vulnerability-scan
   namespace: registry
 spec:
-  # Run daily at 2 AM
   schedule: "0 2 * * *"
   successfulJobsHistoryLimit: 7
   failedJobsHistoryLimit: 3
@@ -12,21 +11,37 @@ spec:
     spec:
       template:
         spec:
+          initContainers:
+          - name: install-tools
+            image: alpine:latest
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                apk add --no-cache curl jq
+                wget -qO- https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp/bin
+            volumeMounts:
+            - name: tools
+              mountPath: /tmp/bin
           containers:
           - name: trivy-scanner
-            image: aquasec/trivy:latest
-            command: ["/bin/sh", "/scripts/scan-all.sh"]
+            image: alpine:latest
+            command: ["/bin/sh"]
+            args: ["/scripts/scan-all.sh"]
             env:
             - name: REGISTRY_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: registry-credentials
                   key: password
+            - name: PATH
+              value: "/tmp/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
             volumeMounts:
             - name: scan-script
               mountPath: /scripts
             - name: scan-reports
               mountPath: /reports
+            - name: tools
+              mountPath: /tmp/bin
           volumes:
           - name: scan-script
             configMap:
@@ -35,4 +50,6 @@ spec:
           - name: scan-reports
             persistentVolumeClaim:
               claimName: scan-reports-pvc
+          - name: tools
+            emptyDir: {}
           restartPolicy: OnFailure

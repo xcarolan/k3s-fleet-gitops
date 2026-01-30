@@ -8,6 +8,10 @@ data:
     #!/bin/sh
     set -e
     
+    # Install required tools
+    echo "Installing curl and jq..."
+    apk add --no-cache curl jq > /dev/null 2>&1
+    
     REGISTRY="192.168.2.200:30500"
     REGISTRY_USER="admin"
     REPORT_DIR="/reports"
@@ -38,7 +42,7 @@ data:
         echo "  Scanning ${IMAGE}..." | tee -a ${REPORT_FILE}
         
         # Scan with Trivy
-        trivy image --quiet --severity HIGH,CRITICAL \
+        /tmp/bin/trivy image --quiet --severity HIGH,CRITICAL \
           --username ${REGISTRY_USER} \
           --password ${REGISTRY_PASSWORD} \
           ${IMAGE} >> ${REPORT_FILE} 2>&1 || true
@@ -56,6 +60,6 @@ data:
     grep -E "Total:|CRITICAL|HIGH" ${REPORT_FILE} || echo "No HIGH/CRITICAL vulnerabilities found!"
     
     # Keep only last 30 days of reports
-    find ${REPORT_DIR} -name "scan-*.txt" -mtime +30 -delete
+    find ${REPORT_DIR} -name "scan-*.txt" -mtime +30 -delete 2>/dev/null || true
     
     echo "Report saved to: ${REPORT_FILE}"
