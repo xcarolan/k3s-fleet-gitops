@@ -6,3 +6,4 @@ resources:
   - cronjob.yaml
   - pvc.yaml
   - registry-secret.yaml
+  - report-viewer.yaml

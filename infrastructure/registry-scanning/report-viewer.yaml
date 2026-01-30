@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: report-viewer-html
+  namespace: registry
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Registry Scan Reports</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                margin: 40px;
+                background: #f5f5f5;
+            }
+            h1 { color: #333; }
+            .container { 
+                max-width: 1200px; 
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            a { 
+                color: #0066cc; 
+                text-decoration: none;
+                font-size: 18px;
+            }
+            a:hover { text-decoration: underline; }
+            .info { 
+                background: #e3f2fd; 
+                padding: 15px; 
+                border-radius: 4px;
+                margin: 20px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Registry Vulnerability Scan Reports</h1>
+            <p>Automated daily scans of Docker registry images at 2 AM UTC</p>
+            <div class="info">
+                <strong>Registry:</strong> 192.168.2.200:30500<br>
+                <strong>Scan Schedule:</strong> Daily at 2:00 AM<br>
+                <strong>Retention:</strong> 30 days
+            </div>
+            <p><a href="/reports/">Browse All Scan Reports</a></p>
+        </div>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: report-viewer-nginx-config
+  namespace: registry
+data:
+  default.conf: |
+    server {
+        listen 80 default_server;
+        server_name _;
+        charset utf-8;
+        
+        location = / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+        
+        location /reports/ {
+            alias /usr/share/nginx/html/reports/;
+            autoindex on;
+            autoindex_exact_size off;
+            autoindex_localtime on;
+            charset utf-8;
+            default_type text/plain;
+            types {
+                text/plain txt;
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scan-report-viewer
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scan-report-viewer
+  template:
+    metadata:
+      labels:
+        app: scan-report-viewer
+    spec:
+      securityContext:
+        fsGroup: 101
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: reports
+          mountPath: /usr/share/nginx/html/reports
+          readOnly: true
+        - name: html
+          mountPath: /usr/share/nginx/html/index.html
+          subPath: index.html
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+      volumes:
+      - name: reports
+        persistentVolumeClaim:
+          claimName: scan-reports-pvc
+      - name: html
+        configMap:
+          name: report-viewer-html
+      - name: nginx-config
+        configMap:
+          name: report-viewer-nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scan-report-viewer
+  namespace: registry
+spec:
+  selector:
+    app: scan-report-viewer
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 80
+    nodePort: 30800
