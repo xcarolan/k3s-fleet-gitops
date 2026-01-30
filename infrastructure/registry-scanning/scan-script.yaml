@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-scan-script
+  namespace: registry
+data:
+  scan-all.sh: |
+    #!/bin/sh
+    set -e
+    
+    REGISTRY="192.168.2.200:30500"
+    REGISTRY_USER="admin"
+    REPORT_DIR="/reports"
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    
+    echo "Starting registry scan at $(date)"
+    
+    # Get list of repositories
+    REPOS=$(curl -u ${REGISTRY_USER}:${REGISTRY_PASSWORD} \
+      http://${REGISTRY}/v2/_catalog | jq -r '.repositories[]')
+    
+    # Create report file
+    REPORT_FILE="${REPORT_DIR}/scan-${TIMESTAMP}.txt"
+    echo "Registry Vulnerability Scan Report - $(date)" > ${REPORT_FILE}
+    echo "==========================================" >> ${REPORT_FILE}
+    echo "" >> ${REPORT_FILE}
+    
+    # Scan each repository
+    for repo in ${REPOS}; do
+      echo "Scanning ${repo}..." | tee -a ${REPORT_FILE}
+      
+      # Get tags
+      TAGS=$(curl -u ${REGISTRY_USER}:${REGISTRY_PASSWORD} \
+        http://${REGISTRY}/v2/${repo}/tags/list | jq -r '.tags[]' 2>/dev/null || echo "latest")
+      
+      for tag in ${TAGS}; do
+        IMAGE="${REGISTRY}/${repo}:${tag}"
+        echo "  Scanning ${IMAGE}..." | tee -a ${REPORT_FILE}
+        
+        # Scan with Trivy
+        trivy image --quiet --severity HIGH,CRITICAL \
+          --username ${REGISTRY_USER} \
+          --password ${REGISTRY_PASSWORD} \
+          ${IMAGE} >> ${REPORT_FILE} 2>&1 || true
+        
+        echo "" >> ${REPORT_FILE}
+      done
+    done
+    
+    echo "" >> ${REPORT_FILE}
+    echo "Scan completed at $(date)" >> ${REPORT_FILE}
+    
+    # Print summary
+    echo ""
+    echo "=== Scan Summary ==="
+    grep -E "Total:|CRITICAL|HIGH" ${REPORT_FILE} || echo "No HIGH/CRITICAL vulnerabilities found!"
+    
+    # Keep only last 30 days of reports
+    find ${REPORT_DIR} -name "scan-*.txt" -mtime +30 -delete
+    
+    echo "Report saved to: ${REPORT_FILE}"

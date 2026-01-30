@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: registry-vulnerability-scan
+  namespace: registry
+spec:
+  # Run daily at 2 AM
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: trivy-scanner
+            image: aquasec/trivy:latest
+            command: ["/bin/sh", "/scripts/scan-all.sh"]
+            env:
+            - name: REGISTRY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: registry-credentials
+                  key: password
+            volumeMounts:
+            - name: scan-script
+              mountPath: /scripts
+            - name: scan-reports
+              mountPath: /reports
+          volumes:
+          - name: scan-script
+            configMap:
+              name: registry-scan-script
+              defaultMode: 0755
+          - name: scan-reports
+            persistentVolumeClaim:
+              claimName: scan-reports-pvc
+          restartPolicy: OnFailure
